@@ -2,13 +2,28 @@
 
 This folder contains a systemd timer/service and an update script to keep the Ollama binary and selected models up to date on a Linux host.
 
-## Files
+## Project Structure
 
-- `ollama_autoupdate_script`: Updates the Ollama binary and optionally pulls models listed in `/etc/ollama/update-models.txt`. Logs to `/var/log/ollama_update.log`.
-- `ollama_autoupdate.service`: systemd oneshot service that runs the update script.
-- `ollama_autoupdate.timer`: systemd timer that runs the service daily.
-- `ollama_commands`: handy commands for verification and API calls.
-- `ollama_model_list`: sample list of models (one per line).
+```
+
+ollama/
+├── README.md                          # This file
+├── setup/                             # Setup and configuration files
+│   ├── ollama_autoupdate_script       # Auto-update script for Ollama binary and models
+│   ├── ollama_autoupdate.service      # systemd service unit
+│   ├── ollama_autoupdate.timer        # systemd timer unit
+│   ├── ollama_commands                # Useful CLI commands reference
+│   ├── ollama_model_list              # List of models to keep updated
+│   └── ollama_models_table.sh         # Script to generate model information table
+├── test/                              # Test and example scripts
+│   ├── main.py                        # Main entry point
+│   ├── test_ollama_chat.py            # Chat API example
+│   ├── test_ollama_streaming.py       # Streaming API example
+│   └── test_ollama_translategemma.py  # TranslateGemma translation example
+├── pyproject.toml                     # uv project configuration
+└── .venv/                             # Virtual environment (created by uv)
+
+```
 
 ## Prerequisites
 
@@ -60,6 +75,28 @@ See `ollama_commands` for copy/paste examples, including:
 - Listing models: `ollama list`
 - Showing a model: `ollama show gpt-oss:20b`
 - API examples for `/api/generate` and `/api/chat`
+
+## Test Scripts
+
+The `test/` folder contains example scripts for testing Ollama API endpoints:
+
+- **`test_ollama_chat.py`**: Demonstrates the `/api/chat` endpoint using the chat API with qwen2.5-coder model for code generation tasks.
+- **`test_ollama_streaming.py`**: Shows streaming responses from the `/api/generate` endpoint, useful for long-running operations.
+- **`test_ollama_translategemma.py`**: Uses the TranslateGemma model to translate text between languages with proper prompt formatting (English to Spanish example).
+
+### Running test scripts
+
+Ensure Ollama is running, then from the `test/` directory:
+
+```bash
+# Activate the virtual environment
+source ../.venv/bin/activate
+
+# Run a test script
+python test_ollama_chat.py
+python test_ollama_streaming.py
+python test_ollama_translategemma.py
+```
 
 ## Notes
 
