@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Ollama auto-update
+
+[Timer]
+OnCalendar=*-*-* 11:30:00
+RandomizedDelaySec=20m
+Persistent=true
+Unit=ollama-autoupdate.service
+
+[Install]
+WantedBy=timers.target
