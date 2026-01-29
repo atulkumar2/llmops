@@ -105,13 +105,13 @@ See [ollama/README.md](ollama/README.md) for:
 ```bash
 # Create installation directory
 sudo mkdir -p /opt/openwebui
+
+# Copy docker-compose.yaml from this repo (adjust path to your repo location)
+sudo cp /path/to/llmops/openwebui/docker-compose.yaml /opt/openwebui/
+
+# Generate secret key in proper format
 cd /opt/openwebui
-
-# Copy docker-compose.yaml from this repo
-sudo cp openwebui/docker-compose.yaml .
-
-# Generate secret key
-openssl rand -hex 32 | sudo tee .env
+echo "WEBUI_SECRET_KEY=$(openssl rand -hex 32)" | sudo tee .env
 sudo chmod 600 .env
 
 # Start services
@@ -145,17 +145,16 @@ See [openwebui/README.md](openwebui/README.md) for:
 - ✅ Secure session management
 
 ### Test Scripts
-- ✅ Chat API examples (`test_ollama_chat.py`)
+- ✅ Chat API examples with code generation (`test_ollama_chat.py` using qwen2.5-coder)
 - ✅ Streaming API examples (`test_ollama_streaming.py`)
 - ✅ Translation examples (`test_ollama_translategemma.py`)
-- ✅ Code generation examples using qwen2.5-coder
 
 ## Models Included
 
 The setup supports various models for different use cases:
 
 - **[Qwen2.5-Coder](https://ollama.com/library/qwen2.5-coder)** (14B) - Code generation and assistance
-- **[Llama 3](https://ollama.com/library/llama3)** - General-purpose LLM
+- **[Llama 3.1](https://ollama.com/library/llama3.1)** - General-purpose LLM
 - **[TranslateGemma](https://ollama.com/library/translategemma)** - Translation (55 languages)
 - **[Llava](https://ollama.com/library/llava)** - Vision-language model
 - **[Deepseek R1](https://ollama.com/library/deepseek-r1)** - Advanced reasoning
@@ -167,16 +166,13 @@ The setup supports various models for different use cases:
 Run the included test scripts to verify your setup:
 
 ```bash
-# Navigate to the test directory
-cd ollama/test
-
-# Create virtual environment (using uv)
+# From the repository root, create virtual environment (using uv)
 uv sync
 
-# Run tests
-uv run python test_ollama_chat.py
-uv run python test_ollama_streaming.py
-uv run python test_ollama_translategemma.py
+# Run test scripts
+uv run python ollama/test/test_ollama_chat.py
+uv run python ollama/test/test_ollama_streaming.py
+uv run python ollama/test/test_ollama_translategemma.py
 ```
 
 ## Maintenance
@@ -245,7 +241,7 @@ This setup follows these principles:
 2. **Systemd Integration**: Proper service management ensures stability and automatic recovery
 3. **Separation of Concerns**: UI layer (Docker) is separate from inference layer (host service)
 4. **Automated Maintenance**: Reduces manual intervention with safe, tested automation
-5. **Production Ready**: Designed for long-running, reliable operation
+5. **Production-Ready**: Designed for long-running, reliable operation
 
 ## License
 
