@@ -1,0 +1,28 @@
+sudo nano ollama_autoupdate_script
+
+sudo journalctl -u ollama-autoupdate.service -n 80 --no-pager
+sudo systemctl start ollama-autoupdate.service
+
+ollama list
+sudo ollama show gpt-oss:20b
+
+bash ollama_models_table.sh  ollama_model_list > ollama_models.tsv
+column -t -s $'\t' ollama_models.tsv | less -S
+
+curl http://localhost:11434/api/generate \
+  -d '{
+    "model": "llama3:latest",
+    "prompt": "Explain RAG in one paragraph",
+    "stream": false
+  }'
+
+curl http://localhost:11434/api/chat \
+  -d '{
+    "model": "qwen2.5-coder:14b",
+    "messages": [
+      {"role": "system", "content": "You are a senior software architect"},
+      {"role": "user", "content": "Design a local RAG system"}
+    ],
+    "stream": false
+  }'
+
