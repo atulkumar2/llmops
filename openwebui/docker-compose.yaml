@@ -1,0 +1,33 @@
+
+services:
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: openwebui
+    ports:
+      - "3000:8080"
+    environment:
+      # Ollama running as a host service (systemd), not a container:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-}
+    volumes:
+      - openwebui:/app/backend/data
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    extra_hosts:
+      # Makes host.docker.internal work on Linux
+      - "host.docker.internal:host-gateway"
+
+  watchtower:
+    image: nickfedor/watchtower:latest
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_POLL_INTERVAL=86400     # 24 hours (also the default)
+      - WATCHTOWER_CLEANUP=true           # remove old images
+      - WATCHTOWER_LABEL_ENABLE=true      # only update labeled containers
+    restart: unless-stopped
+
+volumes:
+  openwebui:
