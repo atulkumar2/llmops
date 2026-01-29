@@ -5,7 +5,7 @@ Docstring for ollama.test_ollama_translategemma
 import requests
 
 # TranslateGemma translation prompt format
-prompt = """You are a professional English (en) to Spanish (es) translator.
+PROMPT = """You are a professional English (en) to Spanish (es) translator.
 Your goal is to accurately convey the meaning and nuances of the original
 English text while adhering to Spanish grammar, vocabulary, and cultural
 sensitivities. Produce only the Spanish translation, without any additional
@@ -20,7 +20,7 @@ resp = requests.post(
     "http://localhost:11434/api/generate",
     json={
         "model": "translategemma:latest",
-        "prompt": prompt,
+        "prompt": PROMPT,
         "stream": False,
     },
     timeout=600,
