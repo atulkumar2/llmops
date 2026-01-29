@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export HOME="${HOME:-/root}"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+LOG="/var/log/ollama_update.log"
+LOCK="/var/lock/ollama_update.lock"
+MODELS_FILE="/etc/ollama/update-models.txt"
+
+exec 9>"$LOCK"
+flock -n 9 || { echo "$(date -Is) another update is running" | tee -a "$LOG"; exit 0; }
+
+say() { echo "$(date -Is) $*" | tee -a "$LOG"; }
+
+say "################################################"
+say "STARTING OLLAMA UPDATE"
+
+# Current version (handles both "ollama version X.Y.Z" and "ollama version is X.Y.Z")
+raw_ver="$(ollama --version 2>&1 || true)"
+current="$(printf '%s\n' "$raw_ver" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+current="${current:-0.0.0}"
+say "ollama --version raw: $raw_ver"
+
+# Latest tag from GitHub (vX.Y.Z). Fall back hard if API fails.
+latest_tag="$(curl -fsSL -H "User-Agent: ollama-autoupdater" \
+  https://api.github.com/repos/ollama/ollama/releases/latest \
+  | grep -Po '"tag_name":\s*"\K[^"]*' || true)"
+latest="${latest_tag#v}"
+if [ -z "${latest:-}" ]; then
+  say "Failed to fetch latest version from GitHub API. Aborting."
+  exit 1
+fi
+
+say "Ollama version: current=${current} latest=${latest}"
+
+# Return true if $1 <= $2 using version sort
+verlte() { [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]; }
+
+# If latest <= current, we're already up to date (or ahead)
+if verlte "$latest" "$current"; then
+  say "OLLAMA BINARY IS UP TO DATE."
+  do_ollama_update=0
+else
+ do_ollama_update=1
+fi
+
+if [ "$do_ollama_update" -eq 1 ]; then
+        say "----------------------------------------------"
+        say "Updating ollama to ${latest}..."
+        # Use official installer; pin target version to avoid partial rollouts.
+        curl -fsSL https://ollama.com/install.sh | sh
+
+        say "----------------------------------------------"
+        say "Restarting Ollama Service after update"
+        # Restart service if present
+        if systemctl list-unit-files ollama.service >/dev/null 2>&1; then
+                systemctl daemon-reload
+                systemctl restart ollama
+                if systemctl --quiet is-active ollama; then
+                        say "ollama.service restarted successfully."
+                else
+                        say "ERROR: ollama.service failed to start."
+                        exit 1
+                fi
+        else
+                say "WARNING: ollama.service not found; skipping restart."
+        fi
+else
+        say "Skipping Ollama Binary update; Proceeding to model updates"
+fi
+
+# Optional: update commonly used models listed one per line
+if [ -f "$MODELS_FILE" ]; then
+  say "=================================================="
+  say "Updating models listed in ${MODELS_FILE}..."
+  while IFS= read -r m; do
+    [ -z "$m" ] && continue
+    say "------------------------------------------"
+    say "Pulling model: $m"
+    out="$(ollama pull "$m" 2>&1 | tail -n 3)"
+    printf '%s\n' "$out" | sed 's/^/    /' | tee -a "$LOG"
+    #ollama pull "$m" >>"$LOG" 2>&1 || say "WARN: Failed to pull $m"
+  done < "$MODELS_FILE"
+fi
+
+say "Ollama Update run complete."
+say "##########################################################"
+
